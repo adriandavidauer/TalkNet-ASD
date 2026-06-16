@@ -4,10 +4,10 @@ numpy
 scipy
 scikit-learn
 tqdm
-scenedetect
+scenedetect<0.7
 opencv-python
 python_speech_features
 torchvision
 ffmpeg
-gdown
+gdown<5.0
 youtube-dl
