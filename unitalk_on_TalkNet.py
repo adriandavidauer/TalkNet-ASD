@@ -118,6 +118,9 @@ def inference_video(args):
 	for fidx, fname in enumerate(flist):
 		image = cv2.imread(fname)
 		imageNumpy = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+		if fidx == 0:
+			width = imageNumpy.shape[1]
+			height = imageNumpy.shape[0]
 		bboxes = DET.detect_faces(imageNumpy, conf_th=0.9, scales=[args.facedetScale])
 		dets.append([])
 		for bbox in bboxes:
@@ -126,7 +129,7 @@ def inference_video(args):
 	savePath = os.path.join(args.pyworkPath,'faces.pckl')
 	with open(savePath, 'wb') as fil:
 		pickle.dump(dets, fil)
-	return dets
+	return dets, width, height
 
 def bb_intersection_over_union(boxA, boxB, evalCol = False):
 	# CPU: IOU Function to calculate overlap between two image
@@ -450,7 +453,7 @@ def main():
 		sys.stderr.write(time.strftime("%Y-%m-%d %H:%M:%S") + " Scene detection and save in %s \r\n" %(args.pyworkPath))	
 
 		# Face detection for the video frames
-		faces = inference_video(args)
+		faces, width, height = inference_video(args)
 		sys.stderr.write(time.strftime("%Y-%m-%d %H:%M:%S") + " Face detection and save in %s \r\n" %(args.pyworkPath))
 
 		# Face tracking
@@ -494,9 +497,10 @@ def main():
 			writer.writerow(_PREDICTION_FIELDS)
 			for track, score in zip(allTracks, scores):
 				for i, (frame_idx, timestamp, s) in enumerate(zip(track['frame'], track['frame'] / native_fps, score)):
+					# TODO: bbox as percentage values of the original video size, to make it more generalizable to different video sizes. 
 					x1, y1, x2, y2 = track['bbox'][i]
 					label = "speaking" if s >= 0 else "not-speaking"
-					writer.writerow([frame_idx, timestamp, label, x1, y1, x2, y2])
+					writer.writerow([frame_idx, timestamp, label, x1/width, y1/height, x2/width, y2/height])
 		elapsed = time.time() - t0
 		# total frames
 		video = cv2.VideoCapture(args.videoPath)
